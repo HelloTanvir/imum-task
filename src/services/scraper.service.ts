@@ -15,15 +15,31 @@ export class ScraperService {
 
             const $ = cheerio.load(html);
 
-            const carListings = $('a.eyfugsy2');
+            const carListings = $('article.e1gbziix0');
 
-            const data = carListings
+            const data: ScraperResponse['data'] = carListings
                 .map((index, element) => {
                     const image = $(element).find('img').attr('src');
-                    const title = $(element).find('[data-testid="ad-card-title"]').text();
-                    const price = $(element).find('[data-testid="ad-card-price"]').text();
+                    const title = $(element).find('h2.ebw6llc0.ooa-16u688i.er34gjf0').text().trim();
+                    const price = $(element).find('div.ooa-80vtuv.er34gjf0').text().trim();
 
-                    return { image, title, price };
+                    const featureList = $(element).find('ul.ooa-zzhv62.eknsrtg0').children();
+
+                    const [model, acceleration, fuelType, cylinderVolume] = featureList
+                        .map((index, element) => {
+                            return $(element).text().trim();
+                        })
+                        .get();
+
+                    return {
+                        image,
+                        title,
+                        price,
+                        model,
+                        acceleration,
+                        fuelType,
+                        cylinderVolume,
+                    };
                 })
                 .get();
 

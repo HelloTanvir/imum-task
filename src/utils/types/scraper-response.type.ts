@@ -4,5 +4,9 @@ export interface ScraperResponse {
         image: string;
         title: string;
         price: string;
+        model: string;
+        acceleration: string;
+        fuelType: string;
+        cylinderVolume: string;
     }[];
 }
