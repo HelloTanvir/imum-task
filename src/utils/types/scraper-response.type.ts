@@ -1,5 +1,6 @@
 export interface ScraperResponse {
     count: number;
+    nextPageUrl?: string;
     data: {
         image: string;
         title: string;

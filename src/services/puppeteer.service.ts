@@ -1,13 +1,19 @@
 import puppeteer from 'puppeteer';
+import { envConfig } from '../utils/config/env.config';
 
 export class PuppeteerService {
-    constructor(private baseUrl: string) {}
+    private baseUrl: string;
+
+    constructor() {
+        const { baseUrl } = envConfig;
+        this.baseUrl = baseUrl;
+    }
 
     async getHtml(url?: string): Promise<string> {
         try {
             const browser = await puppeteer.launch({ headless: 'new' });
             const page = await browser.newPage();
-            await page.goto(url || this.baseUrl);
+            await page.goto(url ? `${this.baseUrl}${url}` : this.baseUrl);
 
             const html = await page.content();
 

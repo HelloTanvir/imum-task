@@ -1,13 +1,12 @@
 import express, { Application } from 'express';
 import { ScraperController } from './controllers/scraper.controller';
-import { ScraperService } from './services/scraper.service';
 import { envConfig } from './utils/config/env.config';
 
-const { port, baseUrl } = envConfig;
+const { port } = envConfig;
 
 const app: Application = express();
 
-const scraperController = new ScraperController(new ScraperService(baseUrl));
+const scraperController = new ScraperController();
 
 app.get('/scrape', scraperController.scrape.bind(scraperController));
 
