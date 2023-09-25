@@ -8,8 +8,6 @@
 $ git clone https://github.com/HelloTanvir/imum-task.git
 ```
 
-## Installation
-
 ```bash
 $ yarn
 ```
