@@ -12,26 +12,11 @@ export class ScraperService {
         this.puppeteerService = new PuppeteerService();
     }
 
-    async openBrowser(): Promise<void> {
-        await this.puppeteerService.init();
-    }
-
-    async closeBrowser(): Promise<void> {
-        await this.puppeteerService.close();
-    }
-
-    async loadPage(url: string): Promise<void> {
-        const html = await this.puppeteerService.getHtml(url);
-        this.$ = cheerio.load(html);
-    }
-
     async scrape(url: string): Promise<ScraperResponse> {
         try {
             const { baseUrl } = envConfig;
 
             let currentPage = 1;
-
-            await this.openBrowser();
 
             while (true) {
                 await this.loadPage(`${baseUrl}${url}`);
@@ -52,11 +37,27 @@ export class ScraperService {
             const allScrapedItems: Data[] = [];
 
             for (const item of this.items) {
-                const data = await this.scrapeTruckItem(item);
-                allScrapedItems.push(data);
+                try {
+                    const data = await this.scrapeTruckItem(item);
+                    allScrapedItems.push(data);
+
+                    console.log(
+                        `Scraped item with id: ${item.id}, index: ${allScrapedItems.length}`
+                    );
+                } catch (error) {
+                    console.error('Error:', error);
+                    console.log(`Failed to scrape item with id: ${item.id}`);
+                    continue;
+                }
             }
 
-            await this.closeBrowser();
+            console.log(
+                'Scraping finished.',
+                'length:',
+                allScrapedItems.length,
+                'total:',
+                totalAdsCount
+            );
 
             return {
                 totalAds: totalAdsCount,
@@ -68,46 +69,41 @@ export class ScraperService {
         }
     }
 
-    async scrapeTruckItem(item: Item): Promise<Data> {
-        try {
-            await this.loadPage(item.url);
+    private async scrapeTruckItem(item: Item): Promise<Data> {
+        await this.loadPage(item.url);
 
-            const data = <Data>{};
+        const data = <Data>{};
 
-            const title = this.$('span.offer-title').text().trim();
-            data.title = title;
+        const title = this.$('span.offer-title').text().trim();
+        data.title = title;
 
-            const price = this.$('span.offer-price__number').text().trim();
-            data.price = price;
+        const price = this.$('span.offer-price__number').text().trim();
+        data.price = price;
 
-            this.$('span.offer-params__label').each((index, element) => {
-                const parameter = this.$(element).text().trim();
-                const value = this.$(element).next().text().trim();
+        this.$('span.offer-params__label').each((index, element) => {
+            const parameter = this.$(element).text().trim();
+            const value = this.$(element).next().text().trim();
 
-                switch (parameter) {
-                    case 'Rok produkcji':
-                        data.production_date = value;
-                        break;
-                    case 'Przebieg':
-                        data.mileage = value;
-                        break;
-                    case 'Moc':
-                        data.power = value;
-                        break;
-                    case 'Data pierwszej rejestracji w historii pojazdu':
-                        data.registration_date = value;
-                        break;
-                }
-            });
+            switch (parameter) {
+                case 'Rok produkcji':
+                    data.production_date = value;
+                    break;
+                case 'Przebieg':
+                    data.mileage = value;
+                    break;
+                case 'Moc':
+                    data.power = value;
+                    break;
+                case 'Data pierwszej rejestracji w historii pojazdu':
+                    data.registration_date = value;
+                    break;
+            }
+        });
 
-            return data;
-        } catch (error) {
-            console.error('Error:', error);
-            throw new Error('An error occurred while scraping data.');
-        }
+        return data;
     }
 
-    addItems() {
+    private addItems() {
         const sections = this.$('section.ev7e6t817');
 
         this.$(sections).each((index, section) => {
@@ -118,7 +114,7 @@ export class ScraperService {
         });
     }
 
-    getTotalAdsCount(): number {
+    private getTotalAdsCount(): number {
         try {
             const totalAds = this.$('p.ev5apm50.ooa-7qbv63.er34gjf0').text();
             const totalAdsCount = Number(totalAds.replace(/\D/g, ''));
@@ -129,7 +125,7 @@ export class ScraperService {
         }
     }
 
-    getNextPageUrl(currentPage: number): string | null {
+    private getNextPageUrl(currentPage: number): string | null {
         try {
             const forwardButton = this.$(
                 'li[data-testid="pagination-step-forwards"][title="Next Page"]'
@@ -150,5 +146,10 @@ export class ScraperService {
             console.error('Error:', error);
             throw new Error('An error occurred while scraping data.');
         }
+    }
+
+    private async loadPage(url: string): Promise<void> {
+        const html = await this.puppeteerService.getHtml(url);
+        this.$ = cheerio.load(html);
     }
 }
